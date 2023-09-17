@@ -6,20 +6,25 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public class AnimatorController : MonoBehaviour
 {
-    private Animator _animator;
+    private Animator animator;
 
     private void Awake()
     {
-        _animator = GetComponent<Animator>();
+        animator = GetComponent<Animator>();
     }
 
     public void PlayIdle()
     {
-        _animator.Play("Idle");
+        animator.Play("Idle");
     }
     
     public void PlayWalk()
     {
-        _animator.Play("Walk");
+        animator.Play("Walk");
+    }
+
+    public void SetTrigger(string Attack)
+    {
+        animator.SetTrigger("Attack");
     }
 }

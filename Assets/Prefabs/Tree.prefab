@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4103439726180384499}
   - component: {fileID: 8113116302382728305}
   - component: {fileID: 2744105151727129963}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Tree_Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 520024285847845766}
   - component: {fileID: 9079706089596326331}
   - component: {fileID: 4721327849230713882}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Tree_Cut_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -175,9 +175,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6665193135941666600}
-  m_Layer: 0
+  - component: {fileID: 1896162329}
+  - component: {fileID: 1896162328}
+  m_Layer: 9
   m_Name: Tree
-  m_TagString: Untagged
+  m_TagString: Tree
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -202,6 +204,33 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &1896162329
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6283741368764112274}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.25
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &1896162328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6283741368764112274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9abfd8b93288a147b6930be06d4a2de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  treeMaxHealth: 50
 --- !u!1 &6457921701947881748
 GameObject:
   m_ObjectHideFlags: 0
@@ -213,7 +242,7 @@ GameObject:
   - component: {fileID: 523855217132543758}
   - component: {fileID: 8960573808820701500}
   - component: {fileID: 7526108976113791150}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Tree_Cut_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -296,7 +325,7 @@ GameObject:
   - component: {fileID: 5906908771728500507}
   - component: {fileID: 4164006836991606384}
   - component: {fileID: 8149369776421993571}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Tree_Cut_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -379,7 +408,7 @@ GameObject:
   - component: {fileID: 1566691657686888282}
   - component: {fileID: 6467770730006165681}
   - component: {fileID: 6628961804942336023}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Tree_Cut_4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
