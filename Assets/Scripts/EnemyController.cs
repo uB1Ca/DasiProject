@@ -1,171 +1,160 @@
-using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections.Generic;
-using Random = UnityEngine.Random;
 
-public class EnemyController : MonoBehaviour, IAttackable
+public class EnemyController : MonoBehaviour,HealthObserver
 {
-    [SerializeField]private AnimatorController animatorController;
-    [SerializeField]private FieldOfView fov;
-    public int enemyMaxHealth = 100;
-    private int currentHealth;
-    public List<Transform> waypoints;
-    public Transform target;
-    public float attackRange = 2f;
-    public float chasingRange = 10f;
-    public float movementSpeed = 3f;
-    private NavMeshAgent agent;
-    private int currentWaypointIndex = 0;
-    private bool isChasing = false;
-    private bool isPatroling = true;
+    private enum EnemyState
+    {
+        Idle,
+        Chasing,
+        Attacking
+    }
 
-    [Header("Waypoint Stop/Wait Time")]
-    [Range(0.1f, 5f)]
-    public float minWaitTime = 1f;
-    [Range(5f, 10f)]
-    public float maxWaitTime = 6f;
+    [Header("Components")]
+    [SerializeField] private FieldOfView fov;
+    [SerializeField] private NavMeshAgent navMeshAgent;
+    [SerializeField] private Animator animator;
 
-    private float waitTime;
-    private float waitTimer;
-    private Animator animator;
+    [Header("Combat Settings")]
+    [SerializeField] private float chaseDistance = 5f;
+    [SerializeField] private float attackDistance = 2f;
+    [SerializeField] private float attackCooldown = 2f;
+    [SerializeField] private int enemyAttackDamage = 1;
+    [SerializeField] private int enemyMaxHealth = 100;
+    [SerializeField] private int currentHealth = 0;
 
-
-    
+    private EnemyState currentState = EnemyState.Idle;
+    private Transform target;
+    private float lastAttackTime;
+    public HealthBar enemyHealthBar;
 
     private void Start()
     {
-        animator = GetComponent<Animator>();
-        fov = GetComponent<FieldOfView>();
-        agent = GetComponent<NavMeshAgent>();
-        GoToNextWaypoint();
+        lastAttackTime = -attackCooldown; // So that the enemy can attack immediately on seeing the player.
         currentHealth = enemyMaxHealth;
+        enemyHealthBar.SetMaxHealth(enemyMaxHealth);
     }
 
     private void Update()
     {
-        if (isChasing)
+        if (fov.visibleTargets.Count > 0)
         {
-            ChasePlayer();
-        }else if (isPatroling)
-        {
-            Patrol();
-        }
+            target = fov.visibleTargets[0];
+            float distanceToTarget = Vector3.Distance(transform.position, target.position);
 
-        if (!agent.pathPending && agent.remainingDistance < 0.5f)
-        {
-            if (waitTimer <= 0f)
+            switch (currentState)
             {
-                GoToNextWaypoint();
-            }
-            else
-            {
-                waitTimer -= Time.deltaTime;
-            }
-        }
+                case EnemyState.Idle:
+                    if (distanceToTarget <= chaseDistance)
+                    {
+                        currentState = EnemyState.Chasing;
+                        SetAnimatorWalk(true);
+                    }
+                    break;
 
-        if (fov != null)
-        {
-            if (fov.visibleTargets.Contains(target))
-            {
-                PlayerDetected(target);
-            }
-            else
-            {
-                PlayerLost();
-            }
-        }
-    }
+                case EnemyState.Chasing:
+                    navMeshAgent.SetDestination(target.position);
 
-    private void StartPatrol()
-    {
-        isChasing = false;
-        isPatroling = true;
-        animator.SetTrigger("WalkTrigger");
-        Patrol();
-    }
+                    if (distanceToTarget <= attackDistance)
+                    {
+                        currentState = EnemyState.Attacking;
+                        SetAnimatorAttack(true);
+                    }
+                    break;
 
-    private void Patrol()
-    {
-        if (waypoints.Count == 0)
-        {
-            return;
-        }
+                case EnemyState.Attacking:
+                    if (Time.time - lastAttackTime >= attackCooldown)
+                    {
+                        HandleAutoAttack();
+                        lastAttackTime = Time.time;
+                    }
 
-        if (!agent.pathPending && agent.remainingDistance < 0.5f)
-        {
-            if (waitTimer <= 0)
-            {
-                GoToNextWaypoint();
-            }
-            else
-            {
-                waitTimer -= Time.deltaTime;
+                    if (distanceToTarget > attackDistance)
+                    {
+                        currentState = EnemyState.Chasing;
+                        SetAnimatorAttack(false);
+                    }
+                    break;
             }
         }
-    }
-    
-    private  void GoToNextWaypoint()
-    {
-        agent.destination = waypoints[currentWaypointIndex].position;
-        currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Count;
-        StartWait();
-    }
-
-    private void StartWait()
-    {
-        isPatroling = false;
-        waitTime = Random.Range(minWaitTime, maxWaitTime);
-        waitTimer = waitTime;
-    }
-
-    private void ChasePlayer()
-    {
-        float distanceToPlayer = Vector3.Distance(transform.position, target.position);
-        if (distanceToPlayer > attackRange)
+        else
         {
-            agent.destination = target.position;
-            animator.SetTrigger("WalkTrigger");
-        }
-
-        if (Vector3.Distance(transform.position, target.position) <= attackRange)
-        {
-            animator.SetTrigger("AttackTrigger");
+            currentState = EnemyState.Idle;
+            SetAnimatorWalk(false);
+            SetAnimatorAttack(false);
         }
     }
 
-    public void PlayerDetected(Transform playerTransform)
+    private void HandleAutoAttack()
     {
-        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-        if (distanceToPlayer <= chasingRange)
+        bool hasValidTarget = false;
+
+        foreach (Transform visibleTarget in fov.visibleTargets)
         {
-            isChasing = true;
-            isPatroling = false;
-            target = playerTransform;
-            animator.SetTrigger("WalkTrigger");
+            if (visibleTarget == null)
+            {
+                continue;
+            }
+
+            if (visibleTarget.CompareTag("Player")) // Assuming the player has the "Player" tag.
+            {
+                AttackPlayer(visibleTarget);
+                hasValidTarget = true;
+            }
+        }
+
+        if (!hasValidTarget)
+        {
+            // There are no valid targets in the FOV, so stop attacking.
+            StopAttacking();
         }
     }
 
-    public void PlayerLost()
+    private void AttackPlayer(Transform playerTransform)
     {
-        isChasing = false;
-        isPatroling = true;
-        StartPatrol();
-        animator.SetTrigger("IdleTrigger");
+        PlayerController player = playerTransform.GetComponent<PlayerController>();
+        if (player != null)
+        {
+            player.TakeDamage(enemyAttackDamage);
+        }
+    }
+
+    private void StopAttacking()
+    {
+        // Implement any logic to stop attacking or reset attack-related states.
+        Debug.Log("Stopping Attack!");
     }
 
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
-
+        enemyHealthBar.SetHealth(currentHealth);
         if (currentHealth <= 0)
         {
             Die();
         }
     }
+    public void UpdateHealth(int health)
+    {
+        currentHealth = health;
+        enemyHealthBar.SetHealth(currentHealth);
+    }
 
     private void Die()
     {
+        Debug.Log("Enemy Died");
         Destroy(gameObject);
+    }
+
+    private void SetAnimatorWalk(bool walking)
+    {
+        animator.SetBool("isWalk", walking);
+    }
+
+    private void SetAnimatorAttack(bool attacking)
+    {
+        animator.SetBool("isAttack", attacking);
     }
 }
